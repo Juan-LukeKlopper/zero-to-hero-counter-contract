@@ -10,6 +10,7 @@ pub static CONFIG_KEY: &[u8] = b"config";
 pub struct State {
     pub count: i32,
     pub x_factor: i32,
+    pub waiting_list: Vec<Addr>,
     pub members_list: Vec<Addr>,
     pub owner: Addr,
 }
