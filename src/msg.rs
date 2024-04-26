@@ -14,6 +14,8 @@ pub struct InstantiateMsg {
 pub enum ExecuteMsg {
     Increment {},
     IncrementXFactor {},
+    AddMeToWaitingList {},
+    AddWaitingListToClub {},
     AddMemberToClub { prospect: Addr},
     Reset { count: i32 },
     ResetXFactor { x_factor: i32 },
@@ -26,6 +28,7 @@ pub enum QueryMsg {
     GetCount {},
     GetXFactor {},
     GetMemberList {},
+    GetWaitingList {},
 }
 
 // We define a custom struct for each query response
@@ -43,4 +46,10 @@ pub struct XFactorResponse {
 pub struct MemberListResponse {
     pub members_list: Vec<Addr>,
 }
+
+#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, JsonSchema)]
+pub struct WaitingListResponse {
+    pub waiting_list: Vec<Addr>,
+}
+
 
