@@ -1,8 +1,8 @@
 use cosmwasm_std::{
-    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult,
+    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult, Addr,
 };
 
-use crate::msg::{CountResponse, XFactorResponse, ExecuteMsg, InstantiateMsg, QueryMsg};
+use crate::msg::{CountResponse, XFactorResponse, ExecuteMsg, InstantiateMsg, QueryMsg, MemberListResponse};
 use crate::state::{config, config_read, State};
 
 #[entry_point]
@@ -12,10 +12,22 @@ pub fn instantiate(
     info: MessageInfo,
     msg: InstantiateMsg,
 ) -> StdResult<Response> {
+    let valid_members_list = match msg.members_list {
+        Some(member_list) => {
+            let validated_addrs: Result<Vec<_>, _> = member_list
+                .iter()
+                .map(|addr| deps.api.addr_validate(addr.as_str()))
+                .collect();
+
+            validated_addrs?
+        },
+        None => vec![info.sender.clone()]
+    };
     let state = State {
         count: msg.count,
         x_factor: msg.x_factor,
         owner: info.sender.clone(),
+        members_list: valid_members_list,
     };
 
     deps.api
@@ -30,6 +42,7 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
     match msg {
         ExecuteMsg::Increment {} => try_increment(deps, env),
         ExecuteMsg::IncrementXFactor {} => try_increment_x_factor(deps, info),
+        ExecuteMsg::AddMemberToClub { prospect } => try_add_member_to_club(deps, info, prospect),
         ExecuteMsg::Reset { count } => try_reset(deps, info, count),
         ExecuteMsg::ResetXFactor { x_factor } => try_reset_x_factor(deps, info, x_factor),
     }
@@ -45,6 +58,7 @@ pub fn try_increment(deps: DepsMut, _env: Env) -> StdResult<Response> {
     Ok(Response::default())
 }
 
+
 pub fn try_increment_x_factor(deps: DepsMut, info: MessageInfo) -> StdResult<Response> {
     let sender_address = info.sender.clone();
     config(deps.storage).update(|mut state| -> Result<_, StdError> {
@@ -57,6 +71,22 @@ pub fn try_increment_x_factor(deps: DepsMut, info: MessageInfo) -> StdResult<Res
     })?;
 
     deps.api.debug("count incremented successfully");
+    Ok(Response::default())
+
+}
+
+pub fn try_add_member_to_club(deps: DepsMut, info: MessageInfo, prospect: Addr) -> StdResult<Response> {
+    let sender_address = info.sender.clone();
+    config(deps.storage).update(|mut state| {
+        if state.members_list.contains(&sender_address) {
+            state.members_list.push(prospect);
+            Ok(state)
+        } else {
+            return Err(StdError::generic_err("Only club members can add a new member!"));
+        }
+    })?;
+
+    deps.api.debug("Member added to club");
     Ok(Response::default())
 
 }
@@ -96,6 +126,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::GetCount {} => to_binary(&query_count(deps)?),
         QueryMsg::GetXFactor {} => to_binary(&query_x_factor(deps)?),
+        QueryMsg::GetMemberList {} => to_binary(&query_members_list(deps)?),
     }
 }
 
@@ -107,6 +138,11 @@ fn query_count(deps: Deps) -> StdResult<CountResponse> {
 fn query_x_factor(deps: Deps) -> StdResult<XFactorResponse> {
     let state = config_read(deps.storage).load()?;
     Ok(XFactorResponse { x_factor: state.x_factor })
+}
+
+fn query_members_list(deps: Deps) -> StdResult<MemberListResponse> {
+    let state = config_read(deps.storage).load()?;
+    Ok(MemberListResponse { members_list: state.members_list })
 }
 
 #[cfg(test)]
