@@ -1,8 +1,10 @@
+use std::vec;
+
 use cosmwasm_std::{
     entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult, Addr,
 };
 
-use crate::msg::{CountResponse, XFactorResponse, ExecuteMsg, InstantiateMsg, QueryMsg, MemberListResponse};
+use crate::msg::{CountResponse, XFactorResponse, ExecuteMsg, InstantiateMsg, QueryMsg, MemberListResponse, WaitingListResponse};
 use crate::state::{config, config_read, State};
 
 #[entry_point]
@@ -28,6 +30,7 @@ pub fn instantiate(
         x_factor: msg.x_factor,
         owner: info.sender.clone(),
         members_list: valid_members_list,
+        waiting_list: vec![],
     };
 
     deps.api
@@ -42,7 +45,9 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
     match msg {
         ExecuteMsg::Increment {} => try_increment(deps, env),
         ExecuteMsg::IncrementXFactor {} => try_increment_x_factor(deps, info),
+        ExecuteMsg::AddMeToWaitingList {} => try_add_me_to_waiting_list(deps, info),
         ExecuteMsg::AddMemberToClub { prospect } => try_add_member_to_club(deps, info, prospect),
+        ExecuteMsg::AddWaitingListToClub {} => try_add_waiting_list_to_club(deps, info),
         ExecuteMsg::Reset { count } => try_reset(deps, info, count),
         ExecuteMsg::ResetXFactor { x_factor } => try_reset_x_factor(deps, info, x_factor),
     }
@@ -75,6 +80,20 @@ pub fn try_increment_x_factor(deps: DepsMut, info: MessageInfo) -> StdResult<Res
 
 }
 
+pub fn try_add_me_to_waiting_list(deps: DepsMut, info: MessageInfo) -> StdResult<Response> {
+    let sender_address = info.sender.clone();
+    config(deps.storage).update(|mut state| -> Result<_, StdError> {
+        if (state.members_list.contains(&sender_address)) || (state.waiting_list.contains(&sender_address)) {
+            return Err(StdError::generic_err("You are already part of the waiting list or members list!"));
+        }
+        state.waiting_list.push(sender_address);
+        Ok(state)
+        })?;
+
+    deps.api.debug("You have been added to the waiting list!");
+    Ok(Response::default())
+}
+
 pub fn try_add_member_to_club(deps: DepsMut, info: MessageInfo, prospect: Addr) -> StdResult<Response> {
     let sender_address = info.sender.clone();
     config(deps.storage).update(|mut state| {
@@ -89,6 +108,26 @@ pub fn try_add_member_to_club(deps: DepsMut, info: MessageInfo, prospect: Addr) 
     deps.api.debug("Member added to club");
     Ok(Response::default())
 
+}
+
+pub fn try_add_waiting_list_to_club(deps: DepsMut, info: MessageInfo) -> StdResult<Response> {
+    let sender_address = info.sender.clone();
+    config(deps.storage).update(|mut state| {
+        if state.members_list.contains(&sender_address) {
+            let list_to_add = state.waiting_list;
+            for prospect in list_to_add {
+
+                state.members_list.push(prospect);
+            }
+            state.waiting_list = vec![];
+            Ok(state)
+        } else {
+            return Err(StdError::generic_err("Only club members can do this action!"))
+        }
+    })?;
+
+    deps.api.debug("Waiting list added to club.");
+    Ok(Response::default())
 }
 
 pub fn try_reset(deps: DepsMut, info: MessageInfo, count: i32) -> StdResult<Response> {
@@ -126,6 +165,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::GetCount {} => to_binary(&query_count(deps)?),
         QueryMsg::GetXFactor {} => to_binary(&query_x_factor(deps)?),
+        QueryMsg::GetWaitingList {} => to_binary(&query_waiting_list(deps)?),
         QueryMsg::GetMemberList {} => to_binary(&query_members_list(deps)?),
     }
 }
@@ -143,6 +183,11 @@ fn query_x_factor(deps: Deps) -> StdResult<XFactorResponse> {
 fn query_members_list(deps: Deps) -> StdResult<MemberListResponse> {
     let state = config_read(deps.storage).load()?;
     Ok(MemberListResponse { members_list: state.members_list })
+}
+
+fn query_waiting_list(deps: Deps) -> StdResult<WaitingListResponse> {
+    let state = config_read(deps.storage).load()?;
+    Ok(WaitingListResponse { waiting_list: state.waiting_list })
 }
 
 #[cfg(test)]
