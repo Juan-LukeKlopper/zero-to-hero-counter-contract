@@ -125,7 +125,10 @@ mod tests {
                 amount: Uint128::new(1000),
             }],
         );
-        let init_msg = InstantiateMsg { count: 17 };
+        let init_msg = InstantiateMsg {
+            count: 17,
+            x_factor: 17,
+        };
 
         // we can just call .unwrap() to assert this was a success
         let res = instantiate(deps.as_mut(), mock_env(), info, init_msg).unwrap();
@@ -151,7 +154,10 @@ mod tests {
                 amount: Uint128::new(2),
             }],
         );
-        let init_msg = InstantiateMsg { count: 17 };
+        let init_msg = InstantiateMsg {
+            count: 17,
+            x_factor: 17,
+        };
 
         let _res = instantiate(deps.as_mut(), mock_env(), info, init_msg).unwrap();
 
@@ -186,7 +192,10 @@ mod tests {
                 amount: Uint128::new(2),
             }],
         );
-        let init_msg = InstantiateMsg { count: 17 };
+        let init_msg = InstantiateMsg {
+            count: 17,
+            x_factor: 17
+        };
 
         let _res = instantiate(deps.as_mut(), mock_env(), info, init_msg).unwrap();
 
