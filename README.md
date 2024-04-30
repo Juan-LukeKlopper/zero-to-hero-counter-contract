@@ -1,78 +1,54 @@
-# Secret Contracts Starter Pack
+# Zero-to-Hero Counter Contract
 
-This is a template to build secret contracts in Rust to run in
-[Secret Network](https://github.com/enigmampc/SecretNetwork).
-To understand the framework better, please read the overview in the
-[CosmWasm repo](https://github.com/CosmWasm/cosmwasm/blob/master/README.md),
-and dig into the [CosmWasm docs](https://book.cosmwasm.com/).
-This assumes you understand the theory and just want to get coding.
+This contract features a Members list, which is a list of cool addresses that are allowed to reset any counter and add other addresses to the list, a Waiting list where individuals can express interest to join the members list, and 3 counters: first is count which is a counter anyone can increment, x factor which is a counter only users whose address contains an X can increment, and member only count which, as the name suggests, can only be incremented by members.
 
-## Creating a new repo from template
+In addition to exploring the website, you can interact with the smart contract directly using the command-line interface (CLI) commands:
 
-Assuming you have a recent version of rust and cargo installed (via [rustup](https://rustup.rs/)),
-then the following should get you a new repo to start a contract:
+Query Messages:
 
-First, install
-[cargo-generate](https://github.com/ashleygwilliams/cargo-generate).
-Unless you did that before, run this line now:
+- Get Count: Retrieve the current count from the smart contract.
+    secretcli query compute query secret1gurx9n0v7jnhx4sk2dqs0y6lx06n84ajyj72g7 '{"get_count": {}}'
 
-```sh
-cargo install cargo-generate --features vendored-openssl
-```
+- Get X Factor: Retrieve the current x factor from the smart contract.
+    secretcli query compute query secret1gurx9n0v7jnhx4sk2dqs0y6lx06n84ajyj72g7 '{"get_x_factor": {}}'
 
-Now, use it to create your new contract.
-Go to the folder in which you want to place it and run:
+- Get Members Only Count: Retrieve the current members only count from the smart contract.
+    secretcli query compute query secret1gurx9n0v7jnhx4sk2dqs0y6lx06n84ajyj72g7 '{"get_members_only_count": {}}'
 
-```sh
-cargo generate --git https://github.com/scrtlabs/secret-template.git --name YOUR_NAME_HERE
-```
+- Get Waiting List: Retrieve the current address on the waiting list from the smart contract.
+    secretcli query compute query secret1gurx9n0v7jnhx4sk2dqs0y6lx06n84ajyj72g7 '{"get_waiting_list": {}}'
 
-You will now have a new folder called `YOUR_NAME_HERE` (I hope you changed that to something else)
-containing a simple working contract and build system that you can customize.
+- Get Members List: Retrieve the current members/admin list from the smart contract.
+    secretcli query compute query secret1gurx9n0v7jnhx4sk2dqs0y6lx06n84ajyj72g7 '{"get_members_list": {}}'
 
-Don't forget to change the `name` and the `authors` fields in the `Cargo.toml` file.
+Execution Messages:
 
-## Create a Repo
+- Increment Count: Add one to the current count from the smart contract.
+    secretcli tx compute execute secret1gurx9n0v7jnhx4sk2dqs0y6lx06n84ajyj72g7 '{"increment": {}}'
 
-After generating, you have a initialized local git repo, but no commits, and no remote.
-Go to a server (eg. github) and create a new upstream repo (called `YOUR-GIT-URL` below).
-Then run the following:
+- Increment X Factor: Add one to the current x factor from the smart contract.
+    secretcli tx compute execute secret1gurx9n0v7jnhx4sk2dqs0y6lx06n84ajyj72g7 '{"increment_x_factor": {}}'
 
-```sh
-# this is needed to create a valid Cargo.lock file (see below)
-cargo check
-git checkout -b master # in case you generate from non-master
-git add .
-git commit -m 'Initial Commit'
-git remote add origin YOUR-GIT-URL
-git push -u origin master
-```
+- Increment Members Only Count: Add one to the current members only count from the smart contract.
+    secretcli tx compute execute secret1gurx9n0v7jnhx4sk2dqs0y6lx06n84ajyj72g7 '{"increment_members_only_count": {}}'
 
-## Using your project
+- Add Me to Waiting List: Add the sender's address to the waiting list from the smart contract.
+    secretcli tx compute execute secret1gurx9n0v7jnhx4sk2dqs0y6lx06n84ajyj72g7 '{"add_me_to_waiting_list": {}}'
 
-Once you have your custom repo, you should check out [Developing](./Developing.md) to explain
-more on how to run tests and develop code. Or go through the
-[Getting Started docs](https://docs.scrt.network/secret-network-documentation/development/getting-started) to get a better feel
-of how to develop.
+Execution Messages (for members only):
 
-[Publishing](./Publishing.md) contains useful information on how to publish your contract
-to the world, once you are ready to deploy it on a running blockchain. And
-[Importing](./Importing.md) contains information about pulling in other contracts or crates
-that have been published.
+- Add Member to Club: Add an address to the members list of the smart contract. **Note!** Please replace ADDRESS with the secret network address you want to add.
+    secretcli tx compute execute secret1gurx9n0v7jnhx4sk2dqs0y6lx06n84ajyj72g7 '{"add_member_to_club": {"prospect": ADDRESS}}'
 
-You can also find lots of useful recipes in the `Makefile` which you can use
-if you have `make` installed (very recommended. at least check them out).
+- Add Waiting List to Club: Add all addresses on the waiting list to the members list of the smart contract.
+    secretcli tx compute execute secret1gurx9n0v7jnhx4sk2dqs0y6lx06n84ajyj72g7 '{"add_waiting_list_to_club": {}}'
 
-Please replace this README file with information about your specific project. You can keep
-the `Developing.md` and `Publishing.md` files as useful referenced, but please set some
-proper description in the README.
+- Reset: Reset the count's state on the smart contract.
+    secretcli tx compute execute secret1gurx9n0v7jnhx4sk2dqs0y6lx06n84ajyj72g7 '{"reset": {"count": 0}}'
 
-## Importing Additional Dependencies
+- Reset X Factor: Reset the x factor's state on the smart contract.
+    secretcli tx compute execute secret1gurx9n0v7jnhx4sk2dqs0y6lx06n84ajyj72g7 '{"reset_x_factor": {"x_factor": 0}}'
 
-If you would like to import additional dependencies, such as [Secret Toolkit](https://github.com/scrtlabs/secret-toolkit) or cw-storage-plus, you can do so by adding the following to your cargo.toml file:
+- Reset Member Only Count: Reset the members only count's state on the smart contract.
+    secretcli tx compute execute secret1gurx9n0v7jnhx4sk2dqs0y6lx06n84ajyj72g7 '{"reset_members_only_count": {}}'
 
-```sh
-[dependencies]
-secret-toolkit = { git = "https://github.com/scrtlabs/secret-toolkit", tag = "v0.8.0"}
-cw-storage-plus = {version = "1.0.1", default-features = false}
-```
