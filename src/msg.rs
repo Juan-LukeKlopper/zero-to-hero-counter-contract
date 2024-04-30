@@ -14,11 +14,13 @@ pub struct InstantiateMsg {
 pub enum ExecuteMsg {
     Increment {},
     IncrementXFactor {},
+    IncrementMembersOnlyCount {},
     AddMeToWaitingList {},
     AddWaitingListToClub {},
     AddMemberToClub { prospect: Addr},
     Reset { count: i32 },
     ResetXFactor { x_factor: i32 },
+    ResetMembersOnlyCount {},
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, JsonSchema)]
@@ -27,6 +29,7 @@ pub enum QueryMsg {
     // GetCount returns the current count as a json-encoded number
     GetCount {},
     GetXFactor {},
+    GetMembersOnlyCount {},
     GetMemberList {},
     GetWaitingList {},
 }
@@ -41,6 +44,12 @@ pub struct CountResponse {
 pub struct XFactorResponse {
     pub x_factor: i32,
 }
+
+#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, JsonSchema)]
+pub struct MembersOnlyCountResponse {
+    pub members_only_count: i32,
+}
+
 
 #[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, JsonSchema)]
 pub struct MemberListResponse {
