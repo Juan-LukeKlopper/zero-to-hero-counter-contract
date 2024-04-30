@@ -19,7 +19,7 @@ Query Messages:
     secretcli query compute query secret1gurx9n0v7jnhx4sk2dqs0y6lx06n84ajyj72g7 '{"get_waiting_list": {}}'
 
 - Get Members List: Retrieve the current members/admin list from the smart contract.
-    secretcli query compute query secret1gurx9n0v7jnhx4sk2dqs0y6lx06n84ajyj72g7 '{"get_members_list": {}}'
+    secretcli query compute query secret1gurx9n0v7jnhx4sk2dqs0y6lx06n84ajyj72g7 '{"get_member_list": {}}'
 
 Execution Messages:
 
