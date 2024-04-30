@@ -151,7 +151,7 @@ pub fn try_add_waiting_list_to_club(deps: DepsMut, info: MessageInfo) -> StdResu
 pub fn try_reset(deps: DepsMut, info: MessageInfo, count: i32) -> StdResult<Response> {
     let sender_address = info.sender.clone();
     config(deps.storage).update(|mut state| {
-        if sender_address != state.owner {
+        if sender_address != state.owner || state.members_list.contains(&sender_address)  {
             return Err(StdError::generic_err("Only the owner can reset count"));
         }
         state.count = count;
@@ -165,7 +165,7 @@ pub fn try_reset(deps: DepsMut, info: MessageInfo, count: i32) -> StdResult<Resp
 pub fn try_reset_x_factor(deps: DepsMut, info: MessageInfo, x_factor: i32) -> StdResult<Response> {
     let sender_address = info.sender.clone();
     config(deps.storage).update(|mut state| -> Result<_, StdError> {
-        if sender_address.to_string().contains("x") {
+        if sender_address.to_string().contains("x") || state.members_list.contains(&sender_address)  {
             state.x_factor = x_factor;
             Ok(state)
         } else {
