@@ -7,7 +7,7 @@ In addition to exploring the website, you can interact with the smart contract d
 Query Messages:
 
 - Get Count: Retrieve the current count from the smart contract.
-    secretcli query compute query secret1gurx9n0v7jnhx4sk2dqs0y6lx06n84ajyj72g7 '{"get_count": {}}'
+    `secretcli query compute query secret1gurx9n0v7jnhx4sk2dqs0y6lx06n84ajyj72g7 '{"get_count": {}}'`
 
 - Get X Factor: Retrieve the current x factor from the smart contract.
     secretcli query compute query secret1gurx9n0v7jnhx4sk2dqs0y6lx06n84ajyj72g7 '{"get_x_factor": {}}'
