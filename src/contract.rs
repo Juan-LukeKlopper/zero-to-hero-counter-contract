@@ -4,7 +4,7 @@ use cosmwasm_std::{
     entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult, Addr,
 };
 
-use crate::msg::{CountResponse, XFactorResponse, ExecuteMsg, InstantiateMsg, QueryMsg, MemberListResponse, WaitingListResponse};
+use crate::msg::{CountResponse, XFactorResponse, ExecuteMsg, InstantiateMsg, QueryMsg, MemberListResponse, WaitingListResponse, MembersOnlyCountResponse};
 use crate::state::{config, config_read, State};
 
 #[entry_point]
@@ -28,6 +28,7 @@ pub fn instantiate(
     let state = State {
         count: msg.count,
         x_factor: msg.x_factor,
+        members_only_count: 0,
         owner: info.sender.clone(),
         members_list: valid_members_list,
         waiting_list: vec![],
@@ -45,11 +46,13 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
     match msg {
         ExecuteMsg::Increment {} => try_increment(deps, env),
         ExecuteMsg::IncrementXFactor {} => try_increment_x_factor(deps, info),
+        ExecuteMsg::IncrementMembersOnlyCount {} => try_increment_members_only_count(deps, info),
         ExecuteMsg::AddMeToWaitingList {} => try_add_me_to_waiting_list(deps, info),
         ExecuteMsg::AddMemberToClub { prospect } => try_add_member_to_club(deps, info, prospect),
         ExecuteMsg::AddWaitingListToClub {} => try_add_waiting_list_to_club(deps, info),
         ExecuteMsg::Reset { count } => try_reset(deps, info, count),
         ExecuteMsg::ResetXFactor { x_factor } => try_reset_x_factor(deps, info, x_factor),
+        ExecuteMsg::ResetMembersOnlyCount {} => try_reset_members_only_count(deps, info),
     }
 }
 
@@ -78,6 +81,21 @@ pub fn try_increment_x_factor(deps: DepsMut, info: MessageInfo) -> StdResult<Res
     deps.api.debug("count incremented successfully");
     Ok(Response::default())
 
+}
+
+pub fn try_increment_members_only_count(deps: DepsMut,info: MessageInfo) -> StdResult<Response> {
+    let sender_address = info.sender.clone();
+    config(deps.storage).update(|mut state| -> Result<_, StdError> {
+        if state.members_list.contains(&sender_address) {
+            state.members_only_count += 1;
+            Ok(state)
+        } else {
+            return Err(StdError::generic_err("You need to be on the members list to increment count"));
+        }
+    })?;
+
+    deps.api.debug("Members only count incremented successfully");
+    Ok(Response::default())
 }
 
 pub fn try_add_me_to_waiting_list(deps: DepsMut, info: MessageInfo) -> StdResult<Response> {
@@ -160,11 +178,28 @@ pub fn try_reset_x_factor(deps: DepsMut, info: MessageInfo, x_factor: i32) -> St
 
 }
 
+
+pub fn try_reset_members_only_count(deps: DepsMut, info: MessageInfo) -> StdResult<Response> {
+    let sender_address = info.sender.clone();
+    config(deps.storage).update(|mut state| -> Result<_, StdError> {
+        if state.members_list.contains(&sender_address) {
+            state.members_only_count = 0;
+            Ok(state)
+        } else {
+            return Err(StdError::generic_err("You need to be on the members list to reset this count"));
+        }
+    })?;
+
+    deps.api.debug("Members only count reset successfully");
+    Ok(Response::default())
+}
+
 #[entry_point]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::GetCount {} => to_binary(&query_count(deps)?),
         QueryMsg::GetXFactor {} => to_binary(&query_x_factor(deps)?),
+        QueryMsg::GetMembersOnlyCount {} => to_binary(&query_members_only_count(deps)?),
         QueryMsg::GetWaitingList {} => to_binary(&query_waiting_list(deps)?),
         QueryMsg::GetMemberList {} => to_binary(&query_members_list(deps)?),
     }
@@ -178,6 +213,11 @@ fn query_count(deps: Deps) -> StdResult<CountResponse> {
 fn query_x_factor(deps: Deps) -> StdResult<XFactorResponse> {
     let state = config_read(deps.storage).load()?;
     Ok(XFactorResponse { x_factor: state.x_factor })
+}
+
+fn query_members_only_count(deps: Deps) -> StdResult<MembersOnlyCountResponse> {
+    let state = config_read(deps.storage).load()?;
+    Ok(MembersOnlyCountResponse { members_only_count: state.members_only_count })
 }
 
 fn query_members_list(deps: Deps) -> StdResult<MemberListResponse> {
